@@ -106,6 +106,12 @@ class ScrAndTppEvalConfig(BaseEvalConfig):
         description="Model name. Must be set with a command line argument.",
     )
 
+    rescale_l2_norm_after_ablation: bool = Field(
+        default=False,
+        title="Rescale L2 Norm After Ablation",
+        description="If True, rescale activations after feature ablation to maintain original L2 norm.",
+    )
+
     n_values: list[int] = Field(
         default_factory=lambda: [2, 5, 10, 20, 50, 100, 500],
         title="N Values",
