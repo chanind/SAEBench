@@ -200,10 +200,12 @@ def ablated_precomputed_activations(
     sae: SAE,
     to_ablate: torch.Tensor,
     sae_batch_size: int,
+    rescale_l2_norm: bool = False,
 ) -> torch.Tensor:
     """NOTE: We don't pass in the attention mask. Thus, we must have already zeroed out all masked tokens in ablation_acts_BLD."""
 
     all_acts_list_BD = []
+    epsilon = 1e-8  # For numerical stability in division
 
     for i in range(0, ablation_acts_BLD.shape[0], sae_batch_size):
         activation_batch_BLD = ablation_acts_BLD[i : i + sae_batch_size]
@@ -221,6 +223,25 @@ def ablated_precomputed_activations(
         f_BLF[..., to_ablate] = 0.0  # zero ablation
 
         modified_acts_BLD = sae.decode(f_BLF) + error_BLD
+
+        if rescale_l2_norm:
+            original_norm_BL1 = torch.linalg.norm(
+                activation_batch_BLD, ord=2, dim=-1, keepdim=True
+            )
+            modified_norm_BL1 = torch.linalg.norm(
+                modified_acts_BLD, ord=2, dim=-1, keepdim=True
+            )
+            scaling_factor_BL1 = original_norm_BL1 / (modified_norm_BL1 + epsilon)
+            # Only apply scaling where modified norm is non-zero
+            # And where original act was non-zero (to avoid scaling padding)
+            scale_mask = (modified_norm_BL1 > epsilon) & (
+                nonzero_acts_BL.unsqueeze(-1).to(torch.bool)
+            )
+            modified_acts_BLD = torch.where(
+                scale_mask,
+                modified_acts_BLD * scaling_factor_BL1,
+                modified_acts_BLD,  # Keep as is if modified norm is zero or original was zero
+            )
 
         # Get the average activation per input. We divide by the number of nonzero activations for the attention mask
         probe_acts_BD = (
@@ -305,6 +326,7 @@ def perform_feature_ablations(
     chosen_classes: list[str],
     probe_batch_size: int,
     perform_scr: bool,
+    rescale_l2_norm_after_ablation: bool,
 ) -> dict[str, dict[int, dict[str, float]]]:
     ablated_class_accuracies = {}
     for ablated_class_name in chosen_classes:
@@ -321,6 +343,7 @@ def perform_feature_ablations(
                         sae,
                         selected_features_F,
                         sae_batch_size,
+                        rescale_l2_norm=rescale_l2_norm_after_ablation,
                     )
                 )
 
@@ -669,6 +692,7 @@ def run_eval_single_dataset(
         chosen_classes,
         config.probe_test_batch_size,
         config.perform_scr,
+        config.rescale_l2_norm_after_ablation,
     )
 
     return ablated_class_accuracies, llm_test_accuracies  # type: ignore
