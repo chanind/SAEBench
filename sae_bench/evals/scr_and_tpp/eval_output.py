@@ -124,6 +124,114 @@ class ScrMetrics(BaseMetrics):
         description="Ablating the top 500 profession latents to increase gender accuracy",
     )
 
+    scr_auroc_dir1_threshold_2: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 2 SAE latents",
+        description="Ablating the top 2 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_2: float | None = Field(
+        None,
+        title="SCR Metric, Top 2 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 2 SAE latents",
+    )
+    scr_auroc_dir2_threshold_2: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 2 SAE latents",
+        description="Ablating the top 2 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_5: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 5 SAE latents",
+        description="Ablating the top 5 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_5: float | None = Field(
+        None,
+        title="SCR Metric, Top 5 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 5 SAE latents",
+    )
+    scr_auroc_dir2_threshold_5: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 5 SAE latents",
+        description="Ablating the top 5 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_10: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 10 SAE latents",
+        description="Ablating the top 10 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_10: float | None = Field(
+        None,
+        title="SCR Metric, Top 10 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 10 SAE latents",
+        json_schema_extra=DEFAULT_DISPLAY,
+    )
+    scr_auroc_dir2_threshold_10: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 10 SAE latents",
+        description="Ablating the top 10 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_20: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 20 SAE latents",
+        description="Ablating the top 20 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_20: float | None = Field(
+        None,
+        title="SCR Metric, Top 20 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 20 SAE latents",
+        json_schema_extra=DEFAULT_DISPLAY,
+    )
+    scr_auroc_dir2_threshold_20: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 20 SAE latents",
+        description="Ablating the top 20 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_50: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 50 SAE latents",
+        description="Ablating the top 50 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_50: float | None = Field(
+        None,
+        title="SCR Metric, Top 50 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 50 SAE latents",
+    )
+    scr_auroc_dir2_threshold_50: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 50 SAE latents",
+        description="Ablating the top 50 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_100: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 100 SAE latents",
+        description="Ablating the top 100 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_100: float | None = Field(
+        None,
+        title="SCR Metric, Top 100 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 100 SAE latents",
+    )
+    scr_auroc_dir2_threshold_100: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 100 SAE latents",
+        description="Ablating the top 100 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_500: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 500 SAE latents",
+        description="Ablating the top 500 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_500: float | None = Field(
+        None,
+        title="SCR Metric, Top 500 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 500 SAE latents",
+    )
+    scr_auroc_dir2_threshold_500: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 500 SAE latents",
+        description="Ablating the top 500 profession latents to increase gender accuracy",
+    )
+
 
 @dataclass
 class ScrMetricCategories(BaseMetricCategories):
@@ -240,6 +348,113 @@ class ScrResultDetail(BaseResultDetail):
         description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 500 SAE latents",
     )
     scr_dir2_threshold_500: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 500 SAE latents",
+        description="Ablating the top 500 profession latents to increase gender accuracy",
+    )
+
+    scr_auroc_dir1_threshold_2: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 2 SAE latents",
+        description="Ablating the top 2 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_2: float | None = Field(
+        None,
+        title="SCR Metric, Top 2 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 2 SAE latents",
+    )
+    scr_auroc_dir2_threshold_2: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 2 SAE latents",
+        description="Ablating the top 2 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_5: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 5 SAE latents",
+        description="Ablating the top 5 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_5: float | None = Field(
+        None,
+        title="SCR Metric, Top 5 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 5 SAE latents",
+    )
+    scr_auroc_dir2_threshold_5: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 5 SAE latents",
+        description="Ablating the top 5 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_10: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 10 SAE latents",
+        description="Ablating the top 10 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_10: float | None = Field(
+        None,
+        title="SCR Metric, Top 10 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 10 SAE latents",
+        json_schema_extra=DEFAULT_DISPLAY,
+    )
+    scr_auroc_dir2_threshold_10: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 10 SAE latents",
+        description="Ablating the top 10 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_20: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 20 SAE latents",
+        description="Ablating the top 20 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_20: float | None = Field(
+        None,
+        title="SCR Metric, Top 20 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 20 SAE latents",
+    )
+    scr_auroc_dir2_threshold_20: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 20 SAE latents",
+        description="Ablating the top 20 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_50: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 50 SAE latents",
+        description="Ablating the top 50 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_50: float | None = Field(
+        None,
+        title="SCR Metric, Top 50 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 50 SAE latents",
+    )
+    scr_auroc_dir2_threshold_50: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 50 SAE latents",
+        description="Ablating the top 50 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_100: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 100 SAE latents",
+        description="Ablating the top 100 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_100: float | None = Field(
+        None,
+        title="SCR Metric, Top 100 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 100 SAE latents",
+    )
+    scr_auroc_dir2_threshold_100: float | None = Field(
+        None,
+        title="SCR Dir 2, Top 100 SAE latents",
+        description="Ablating the top 100 profession latents to increase gender accuracy",
+    )
+    scr_auroc_dir1_threshold_500: float | None = Field(
+        None,
+        title="SCR Dir 1, Top 500 SAE latents",
+        description="Ablating the top 500 gender latents to increase profession accuracy",
+    )
+    scr_auroc_metric_threshold_500: float | None = Field(
+        None,
+        title="SCR Metric, Top 500 SAE latents",
+        description="SCR Metric (selecting dir1 if inital profession accuracy is lower than initial gender accuracy, else dir2) ablating the top 500 SAE latents",
+    )
+    scr_auroc_dir2_threshold_500: float | None = Field(
         None,
         title="SCR Dir 2, Top 500 SAE latents",
         description="Ablating the top 500 profession latents to increase gender accuracy",
@@ -383,6 +598,114 @@ class TppMetrics(BaseMetrics):
         description="TPP decrease to all unintended classes when ablating the top 500 SAE latents",
     )
 
+    tpp_auroc_threshold_2_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 2 SAE latents",
+        description="TPP metric when ablating the top 2 SAE latents",
+    )
+    tpp_auroc_threshold_2_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 2 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 2 SAE latents",
+    )
+    tpp_auroc_threshold_2_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 2 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 2 SAE latents",
+    )
+    tpp_auroc_threshold_5_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 5 SAE latents",
+        description="TPP metric when ablating the top 5 SAE latents",
+    )
+    tpp_auroc_threshold_5_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 5 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 5 SAE latents",
+    )
+    tpp_auroc_threshold_5_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 5 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 5 SAE latents",
+    )
+    tpp_auroc_threshold_10_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 10 SAE latents",
+        description="TPP metric when ablating the top 10 SAE latents",
+        json_schema_extra=DEFAULT_DISPLAY,
+    )
+    tpp_auroc_threshold_10_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 10 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 10 SAE latents",
+    )
+    tpp_auroc_threshold_10_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 10 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 10 SAE latents",
+    )
+    tpp_auroc_threshold_20_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 20 SAE latents",
+        description="TPP metric when ablating the top 20 SAE latents",
+        json_schema_extra=DEFAULT_DISPLAY,
+    )
+    tpp_auroc_threshold_20_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 20 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 20 SAE latents",
+    )
+    tpp_auroc_threshold_20_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 20 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 20 SAE latents",
+    )
+    tpp_auroc_threshold_50_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 50 SAE latents",
+        description="TPP metric when ablating the top 50 SAE latents",
+    )
+    tpp_auroc_threshold_50_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 50 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 50 SAE latents",
+    )
+    tpp_auroc_threshold_50_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 50 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 50 SAE latents",
+    )
+    tpp_auroc_threshold_100_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 100 SAE latents",
+        description="TPP metric when ablating the top 100 SAE latents",
+    )
+    tpp_auroc_threshold_100_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 100 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 100 SAE latents",
+    )
+    tpp_auroc_threshold_100_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 100 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 100 SAE latents",
+    )
+    tpp_auroc_threshold_500_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 500 SAE latents",
+        description="TPP metric when ablating the top 500 SAE latents",
+    )
+    tpp_auroc_threshold_500_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 500 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 500 SAE latents",
+    )
+    tpp_auroc_threshold_500_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 500 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 500 SAE latents",
+    )
+
 
 @dataclass
 class TppMetricCategories(BaseMetricCategories):
@@ -499,6 +822,113 @@ class TppResultDetail(BaseResultDetail):
         description="TPP decrease to the intended class only when ablating the top 500 SAE latents",
     )
     tpp_threshold_500_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 500 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 500 SAE latents",
+    )
+
+    tpp_auroc_threshold_2_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 2 SAE latents",
+        description="TPP metric when ablating the top 2 SAE latents",
+    )
+    tpp_auroc_threshold_2_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 2 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 2 SAE latents",
+    )
+    tpp_auroc_threshold_2_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 2 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 2 SAE latents",
+    )
+    tpp_auroc_threshold_5_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 5 SAE latents",
+        description="TPP metric when ablating the top 5 SAE latents",
+    )
+    tpp_auroc_threshold_5_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 5 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 5 SAE latents",
+    )
+    tpp_auroc_threshold_5_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 5 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 5 SAE latents",
+    )
+    tpp_auroc_threshold_10_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 10 SAE latents",
+        description="TPP metric when ablating the top 10 SAE latents",
+        json_schema_extra=DEFAULT_DISPLAY,
+    )
+    tpp_auroc_threshold_10_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 10 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 10 SAE latents",
+    )
+    tpp_auroc_threshold_10_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 10 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 10 SAE latents",
+    )
+    tpp_auroc_threshold_20_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 20 SAE latents",
+        description="TPP metric when ablating the top 20 SAE latents",
+    )
+    tpp_auroc_threshold_20_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 20 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 20 SAE latents",
+    )
+    tpp_auroc_threshold_20_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 20 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 20 SAE latents",
+    )
+    tpp_auroc_threshold_50_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 50 SAE latents",
+        description="TPP metric when ablating the top 50 SAE latents",
+    )
+    tpp_auroc_threshold_50_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 50 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 50 SAE latents",
+    )
+    tpp_auroc_threshold_50_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 50 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 50 SAE latents",
+    )
+    tpp_auroc_threshold_100_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 100 SAE latents",
+        description="TPP metric when ablating the top 100 SAE latents",
+    )
+    tpp_auroc_threshold_100_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 100 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 100 SAE latents",
+    )
+    tpp_auroc_threshold_100_unintended_diff_only: float | None = Field(
+        None,
+        title="TPP Unintended Class, Top 100 SAE latents",
+        description="TPP decrease to all unintended classes when ablating the top 100 SAE latents",
+    )
+    tpp_auroc_threshold_500_total_metric: float | None = Field(
+        None,
+        title="TPP Metric, Top 500 SAE latents",
+        description="TPP metric when ablating the top 500 SAE latents",
+    )
+    tpp_auroc_threshold_500_intended_diff_only: float | None = Field(
+        None,
+        title="TPP Intended Class, Top 500 SAE latents",
+        description="TPP decrease to the intended class only when ablating the top 500 SAE latents",
+    )
+    tpp_auroc_threshold_500_unintended_diff_only: float | None = Field(
         None,
         title="TPP Unintended Class, Top 500 SAE latents",
         description="TPP decrease to all unintended classes when ablating the top 500 SAE latents",

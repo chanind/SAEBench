@@ -268,7 +268,8 @@ def get_probe_test_accuracy(
             all_activations, class_name, perform_scr=perform_scr
         )
 
-        test_acc_probe = probe_training.test_probe_gpu(
+        # test_probe_gpu returns (accuracy, auroc), we only need accuracy here
+        test_acc_probe, _test_auroc = probe_training.test_probe_gpu(
             test_acts,
             test_labels,
             probe_batch_size,
@@ -277,12 +278,47 @@ def get_probe_test_accuracy(
         test_accuracies[class_name] = test_acc_probe
 
     if perform_scr:
+        # This function currently only returns accuracies
         scr_probe_accuracies = get_scr_probe_test_accuracy(
             probes, all_class_list, all_activations, probe_batch_size
         )
+        # Update the main dict with these accuracies
         test_accuracies.update(scr_probe_accuracies)
 
     return test_accuracies
+
+
+def get_probe_test_auroc(
+    probes: dict[str, probe_training.Probe],
+    all_class_list: list[str],
+    all_activations: dict[str, torch.Tensor],
+    probe_batch_size: int,
+    perform_scr: bool,
+) -> dict[str, float]:
+    """Calculate AUROC for probes on given activations."""
+    test_aurocs = {}
+    for class_name in all_class_list:
+        test_acts, test_labels = probe_training.prepare_probe_data(
+            all_activations, class_name, perform_scr=perform_scr
+        )
+
+        # test_probe_gpu returns (accuracy, auroc)
+        _test_acc_probe, test_auroc_probe = probe_training.test_probe_gpu(
+            test_acts,
+            test_labels,
+            probe_batch_size,
+            probes[class_name],
+        )
+        test_aurocs[class_name] = test_auroc_probe
+
+    if perform_scr:
+        # Get the AUROCs for the cross-probe SCR tests
+        scr_probe_aurocs = get_scr_probe_test_auroc(
+            probes, all_class_list, all_activations, probe_batch_size
+        )
+        test_aurocs.update(scr_probe_aurocs)
+
+    return test_aurocs
 
 
 def get_scr_probe_test_accuracy(
@@ -291,7 +327,7 @@ def get_scr_probe_test_accuracy(
     all_activations: dict[str, torch.Tensor],
     probe_batch_size: int,
 ) -> dict[str, float]:
-    """Tests e.g. male_professor / female_nurse probe on professor / nurse labels"""
+    """Tests e.g. male_professor / female_nurse probe on professor / nurse labels - ACCURACY ONLY"""
     test_accuracies = {}
     for class_name in all_class_list:
         if class_name not in dataset_info.PAIRED_CLASS_KEYS:
@@ -304,7 +340,8 @@ def get_scr_probe_test_accuracy(
         )
 
         for spurious_class_name in spurious_class_names:
-            test_acc_probe = probe_training.test_probe_gpu(
+            # Test probe returns (accuracy, auroc), we only need accuracy here
+            test_acc_probe, _test_auroc = probe_training.test_probe_gpu(
                 test_acts,
                 test_labels,
                 probe_batch_size,
@@ -314,6 +351,38 @@ def get_scr_probe_test_accuracy(
             test_accuracies[combined_class_name] = test_acc_probe
 
     return test_accuracies
+
+
+def get_scr_probe_test_auroc(
+    probes: dict[str, probe_training.Probe],
+    all_class_list: list[str],
+    all_activations: dict[str, torch.Tensor],
+    probe_batch_size: int,
+) -> dict[str, float]:
+    """Tests e.g. male_professor / female_nurse probe on professor / nurse labels - AUROC ONLY"""
+    test_aurocs = {}
+    for class_name in all_class_list:
+        if class_name not in dataset_info.PAIRED_CLASS_KEYS:
+            continue
+        spurious_class_names = [
+            key for key in dataset_info.PAIRED_CLASS_KEYS if key != class_name
+        ]
+        test_acts, test_labels = probe_training.prepare_probe_data(
+            all_activations, class_name, perform_scr=True
+        )
+
+        for spurious_class_name in spurious_class_names:
+            # Test probe returns (accuracy, auroc), we only need auroc here
+            _test_acc_probe, test_auroc = probe_training.test_probe_gpu(
+                test_acts,
+                test_labels,
+                probe_batch_size,
+                probes[spurious_class_name],
+            )
+            combined_class_name = f"{spurious_class_name} probe on {class_name} data"
+            test_aurocs[combined_class_name] = test_auroc
+
+    return test_aurocs
 
 
 def perform_feature_ablations(
@@ -327,10 +396,16 @@ def perform_feature_ablations(
     probe_batch_size: int,
     perform_scr: bool,
     rescale_l2_norm_after_ablation: bool,
-) -> dict[str, dict[int, dict[str, float]]]:
+) -> tuple[
+    dict[str, dict[int, dict[str, float]]], dict[str, dict[int, dict[str, float]]]
+]:
     ablated_class_accuracies = {}
+    ablated_class_aurocs = {}
+
     for ablated_class_name in chosen_classes:
         ablated_class_accuracies[ablated_class_name] = {}
+        ablated_class_aurocs[ablated_class_name] = {}
+
         for top_n in top_n_values:
             selected_features_F = select_top_n_features(
                 node_effects[ablated_class_name], top_n, ablated_class_name
@@ -347,36 +422,53 @@ def perform_feature_ablations(
                     )
                 )
 
-            ablated_class_accuracies[ablated_class_name][top_n] = (
-                get_probe_test_accuracy(
-                    probes,
-                    chosen_classes,
-                    test_acts_ablated,
-                    probe_batch_size,
-                    perform_scr,
-                )
+            # Calculate Accuracy
+            current_accuracies = get_probe_test_accuracy(
+                probes,
+                chosen_classes,
+                test_acts_ablated,
+                probe_batch_size,
+                perform_scr,
             )
-    return ablated_class_accuracies
+
+            # Calculate AUROC
+            current_aurocs = get_probe_test_auroc(
+                probes,
+                chosen_classes,
+                test_acts_ablated,
+                probe_batch_size,
+                perform_scr,
+            )
+
+            ablated_class_accuracies[ablated_class_name][top_n] = current_accuracies
+            ablated_class_aurocs[ablated_class_name][top_n] = current_aurocs
+
+    return ablated_class_accuracies, ablated_class_aurocs
 
 
 def get_scr_plotting_dict(
     class_accuracies: dict[str, dict[int, dict[str, float]]],
-    llm_clean_accs: dict[str, float],
+    class_aurocs: dict[str, dict[int, dict[str, float]]],
+    llm_clean_results: dict[str, tuple[float, float]],
 ) -> dict[str, float]:
     """raw_results: dict[class_name][threshold][class_name] = float
-    llm_clean_accs: dict[class_name] = float
+    llm_clean_results: dict[class_name] = (accuracy, auroc)
     Returns: dict[metric_name] = float"""
 
     results = {}
     eval_probe_class_id = "male_professor / female_nurse"
+    epsilon = 1e-8  # For division stability
 
     dirs = [1, 2]
 
     dir1_class_name = f"{eval_probe_class_id} probe on professor / nurse data"
     dir2_class_name = f"{eval_probe_class_id} probe on male / female data"
 
-    dir1_acc = llm_clean_accs[dir1_class_name]
-    dir2_acc = llm_clean_accs[dir2_class_name]
+    # Extract initial accuracies and aurocs for comparison
+    dir1_acc = llm_clean_results[dir1_class_name][0]
+    dir2_acc = llm_clean_results[dir2_class_name][0]
+    dir1_auroc = llm_clean_results[dir1_class_name][1]
+    dir2_auroc = llm_clean_results[dir2_class_name][1]
 
     for dir in dirs:
         if dir == 1:
@@ -389,95 +481,165 @@ def get_scr_plotting_dict(
             raise ValueError("Invalid dir.")
 
         for threshold in class_accuracies[ablated_probe_class_id]:
-            clean_acc = llm_clean_accs[eval_data_class_id]
+            clean_acc = llm_clean_results[eval_data_class_id][0]
+            clean_auroc = llm_clean_results[eval_data_class_id][1]
 
             combined_class_name = (
                 f"{eval_probe_class_id} probe on {eval_data_class_id} data"
             )
 
-            original_acc = llm_clean_accs[combined_class_name]
-
+            # --- Accuracy Calculation ---
+            original_acc = llm_clean_results[combined_class_name][0]
             changed_acc = class_accuracies[ablated_probe_class_id][threshold][
                 combined_class_name
             ]
 
-            if (clean_acc - original_acc) < 0.001:
-                scr_score = 0
+            if abs(clean_acc - original_acc) < epsilon:
+                scr_score_acc = 0.0
             else:
-                scr_score = (changed_acc - original_acc) / (clean_acc - original_acc)
+                scr_score_acc = (changed_acc - original_acc) / (
+                    clean_acc - original_acc
+                )
 
             print(
-                f"dir: {dir}, original_acc: {original_acc}, clean_acc: {clean_acc}, changed_acc: {changed_acc}, scr_score: {scr_score}"
+                f"ACC: dir: {dir}, thr: {threshold}, orig: {original_acc:.3f}, clean: {clean_acc:.3f}, changed: {changed_acc:.3f}, scr: {scr_score_acc:.3f}"
             )
 
-            metric_key = f"scr_dir{dir}_threshold_{threshold}"
+            metric_key_acc = f"scr_dir{dir}_threshold_{threshold}"
+            results[metric_key_acc] = scr_score_acc
 
-            results[metric_key] = scr_score
-
-            scr_metric_key = f"scr_metric_threshold_{threshold}"
+            scr_metric_key_acc = f"scr_metric_threshold_{threshold}"
             if dir1_acc < dir2_acc and dir == 1:
-                results[scr_metric_key] = scr_score
+                results[scr_metric_key_acc] = scr_score_acc
             elif dir1_acc > dir2_acc and dir == 2:
-                results[scr_metric_key] = scr_score
+                results[scr_metric_key_acc] = scr_score_acc
+            elif (
+                scr_metric_key_acc not in results
+            ):  # Initialize if not set by other dir
+                results[scr_metric_key_acc] = 0.0
+
+            # --- AUROC Calculation ---
+            original_auroc = llm_clean_results[combined_class_name][1]
+            changed_auroc = class_aurocs[ablated_probe_class_id][threshold][
+                combined_class_name
+            ]
+
+            if abs(clean_auroc - original_auroc) < epsilon:
+                scr_score_auroc = 0.0
+            else:
+                scr_score_auroc = (changed_auroc - original_auroc) / (
+                    clean_auroc - original_auroc
+                )
+
+            print(
+                f"AUC: dir: {dir}, thr: {threshold}, orig: {original_auroc:.3f}, clean: {clean_auroc:.3f}, changed: {changed_auroc:.3f}, scr: {scr_score_auroc:.3f}"
+            )
+
+            metric_key_auroc = f"scr_auroc_dir{dir}_threshold_{threshold}"
+            results[metric_key_auroc] = scr_score_auroc
+
+            scr_metric_key_auroc = f"scr_auroc_metric_threshold_{threshold}"
+            if dir1_auroc < dir2_auroc and dir == 1:
+                results[scr_metric_key_auroc] = scr_score_auroc
+            elif dir1_auroc > dir2_auroc and dir == 2:
+                results[scr_metric_key_auroc] = scr_score_auroc
+            elif (
+                scr_metric_key_auroc not in results
+            ):  # Initialize if not set by other dir
+                results[scr_metric_key_auroc] = 0.0
 
     return results
 
 
 def create_tpp_plotting_dict(
     class_accuracies: dict[str, dict[int, dict[str, float]]],
-    llm_clean_accs: dict[str, float],
-) -> tuple[dict[str, float], dict[str, dict[str, list[float]]]]:
+    class_aurocs: dict[str, dict[int, dict[str, float]]],
+    llm_clean_results: dict[str, tuple[float, float]],
+) -> tuple[dict[str, float], dict[str, dict[str, float]]]:
     """Calculates TPP metrics for each class and overall averages.
 
     Args:
         class_accuracies: Nested dict mapping class_name -> threshold -> other_class -> accuracy
-        llm_clean_accs: Dict mapping class_name -> clean accuracy
+        class_aurocs: Nested dict mapping class_name -> threshold -> other_class -> auroc
+        llm_clean_results: Dict mapping class_name -> (clean accuracy, clean auroc)
 
     Returns:
         Tuple containing:
         - Dict mapping metric_name -> value for overall averages
-        - Dict mapping class_name -> metric_name -> value
+        - Dict mapping class_name -> metric_name -> value (now float, not list)
     """
     per_class_results = {}
     overall_results = {}
-    classes = list(llm_clean_accs.keys())
+    classes = list(llm_clean_results.keys())
 
     for class_name in classes:
         if " probe on " in class_name:
             raise ValueError("This is SCR, shouldn't be here.")
 
         class_metrics = {}
-        intended_clean_acc = llm_clean_accs[class_name]
+        intended_clean_acc = llm_clean_results[class_name][0]
+        intended_clean_auroc = llm_clean_results[class_name][1]
 
         # Calculate metrics for each threshold
         for threshold in class_accuracies[class_name]:
-            # Intended differences
+            # --- Accuracy Calculation ---
             intended_patched_acc = class_accuracies[class_name][threshold][class_name]
-            intended_diff = intended_clean_acc - intended_patched_acc
+            intended_diff_acc = intended_clean_acc - intended_patched_acc
 
-            # Unintended differences for this threshold
-            unintended_diffs = []
+            unintended_diffs_acc = []
             for unintended_class in classes:
                 if unintended_class == class_name:
                     continue
 
-                unintended_clean_acc = llm_clean_accs[unintended_class]
+                unintended_clean_acc = llm_clean_results[unintended_class][0]
                 unintended_patched_acc = class_accuracies[class_name][threshold][
                     unintended_class
                 ]
                 unintended_diff = unintended_clean_acc - unintended_patched_acc
-                unintended_diffs.append(unintended_diff)
+                unintended_diffs_acc.append(unintended_diff)
 
-            avg_unintended = sum(unintended_diffs) / len(unintended_diffs)
-            avg_diff = intended_diff - avg_unintended
+            avg_unintended_acc = sum(unintended_diffs_acc) / len(unintended_diffs_acc)
+            avg_diff_acc = intended_diff_acc - avg_unintended_acc
 
-            # Store with original key format
-            class_metrics[f"tpp_threshold_{threshold}_total_metric"] = avg_diff
+            class_metrics[f"tpp_threshold_{threshold}_total_metric"] = avg_diff_acc
             class_metrics[f"tpp_threshold_{threshold}_intended_diff_only"] = (
-                intended_diff
+                intended_diff_acc
             )
             class_metrics[f"tpp_threshold_{threshold}_unintended_diff_only"] = (
-                avg_unintended
+                avg_unintended_acc
+            )
+
+            # --- AUROC Calculation ---
+            intended_patched_auroc = class_aurocs[class_name][threshold][class_name]
+            intended_diff_auroc = intended_clean_auroc - intended_patched_auroc
+
+            unintended_diffs_auroc = []
+            for unintended_class in classes:
+                if unintended_class == class_name:
+                    continue
+
+                unintended_clean_auroc = llm_clean_results[unintended_class][1]
+                unintended_patched_auroc = class_aurocs[class_name][threshold][
+                    unintended_class
+                ]
+                unintended_diff_auroc = (
+                    unintended_clean_auroc - unintended_patched_auroc
+                )
+                unintended_diffs_auroc.append(unintended_diff_auroc)
+
+            avg_unintended_auroc = sum(unintended_diffs_auroc) / len(
+                unintended_diffs_auroc
+            )
+            avg_diff_auroc = intended_diff_auroc - avg_unintended_auroc
+
+            class_metrics[f"tpp_auroc_threshold_{threshold}_total_metric"] = (
+                avg_diff_auroc
+            )
+            class_metrics[f"tpp_auroc_threshold_{threshold}_intended_diff_only"] = (
+                intended_diff_auroc
+            )
+            class_metrics[f"tpp_auroc_threshold_{threshold}_unintended_diff_only"] = (
+                avg_unintended_auroc
             )
 
         per_class_results[class_name] = class_metrics
@@ -565,12 +727,15 @@ def run_eval_single_dataset(
     artifacts_folder: str,
     save_activations: bool = True,
     column1_vals: tuple[str, str] | None = None,
-) -> tuple[dict[str, dict[str, dict[int, dict[str, float]]]], dict[str, float]]:
-    """Return dict is of the form:
-    dict[ablated_class_name][threshold][measured_acc_class_name] = float
-
-    config: eval_config.EvalConfig contains all hyperparameters to reproduce the evaluation.
-    It is saved in the results_dict for reproducibility."""
+) -> tuple[
+    dict[str, dict[int, dict[str, float]]],
+    dict[str, dict[int, dict[str, float]]],
+    dict[str, tuple[float, float]],
+]:
+    """Return tuple:
+    (ablated_class_accuracies, ablated_class_aurocs, llm_clean_results)
+    llm_clean_results is dict[class_name] = (accuracy, auroc)
+    """
 
     column2_vals = COLUMN2_VALS_LOOKUP[dataset_name]
 
@@ -619,22 +784,33 @@ def run_eval_single_dataset(
 
         torch.set_grad_enabled(True)
 
-        llm_probes, llm_test_accuracies = probe_training.train_probe_on_activations(
-            all_meaned_train_acts_BD,
-            all_meaned_test_acts_BD,
-            select_top_k=None,
-            use_sklearn=False,
-            batch_size=config.probe_train_batch_size,
-            epochs=config.probe_epochs,
-            lr=config.probe_lr,
-            perform_scr=config.perform_scr,
-            early_stopping_patience=config.early_stopping_patience,
-            l1_penalty=config.probe_l1_penalty,
+        llm_probes, llm_initial_test_accuracies = (
+            probe_training.train_probe_on_activations(
+                all_meaned_train_acts_BD,
+                all_meaned_test_acts_BD,
+                select_top_k=None,
+                use_sklearn=False,
+                batch_size=config.probe_train_batch_size,
+                epochs=config.probe_epochs,
+                lr=config.probe_lr,
+                perform_scr=config.perform_scr,
+                early_stopping_patience=config.early_stopping_patience,
+                l1_penalty=config.probe_l1_penalty,
+            )
         )
 
         torch.set_grad_enabled(False)
 
+        # Recalculate test accuracies and calculate test AUROCs using the final probes
+        # This ensures consistency and includes SCR cross-probe tests if applicable
         llm_test_accuracies = get_probe_test_accuracy(
+            llm_probes,  # type: ignore
+            chosen_classes,
+            all_meaned_test_acts_BD,
+            config.probe_test_batch_size,
+            config.perform_scr,
+        )
+        llm_test_aurocs = get_probe_test_auroc(
             llm_probes,  # type: ignore
             chosen_classes,
             all_meaned_test_acts_BD,
@@ -649,7 +825,8 @@ def run_eval_single_dataset(
 
         llm_probes_dict = {
             "llm_probes": llm_probes,
-            "llm_test_accuracies": llm_test_accuracies,
+            "llm_test_accuracies": llm_test_accuracies,  # Store recalculated accs
+            "llm_test_aurocs": llm_test_aurocs,  # Store calculated AUROCs
         }
 
         if save_activations:
@@ -670,8 +847,32 @@ def run_eval_single_dataset(
 
         llm_probes = llm_probes_dict["llm_probes"]
         llm_test_accuracies = llm_probes_dict["llm_test_accuracies"]
+        # Load AUROCs if they exist in the saved file, otherwise calculate
+        if "llm_test_aurocs" in llm_probes_dict:
+            llm_test_aurocs = llm_probes_dict["llm_test_aurocs"]
+        else:
+            print("Calculating missing AUROCs from loaded probes...")
+            all_meaned_test_acts_BD = (
+                activation_collection.create_meaned_model_activations(acts["test"])
+            )
+            # Get the base classes present in the actual activation data
+            base_classes = list(acts["test"].keys())
+            llm_test_aurocs = get_probe_test_auroc(
+                llm_probes,  # type: ignore
+                base_classes,  # <-- Pass only base classes here
+                all_meaned_test_acts_BD,
+                config.probe_test_batch_size,
+                config.perform_scr,
+            )
+            # Optionally save back the probes file with AUROCs added? For now, just calculate.
 
     torch.set_grad_enabled(False)
+
+    # Combine accuracies and AUROCs into the results dict
+    llm_clean_results = {
+        key: (llm_test_accuracies[key], llm_test_aurocs.get(key, 0.0))
+        for key in llm_test_accuracies
+    }
 
     sae_node_effects = get_all_node_effects_for_one_sae(
         sae,
@@ -682,7 +883,8 @@ def run_eval_single_dataset(
         config.sae_batch_size,
     )
 
-    ablated_class_accuracies = perform_feature_ablations(
+    # Update call site to receive tuple
+    ablated_class_accuracies, ablated_class_aurocs = perform_feature_ablations(
         llm_probes,  # type: ignore
         sae,
         config.sae_batch_size,
@@ -695,7 +897,7 @@ def run_eval_single_dataset(
         config.rescale_l2_norm_after_ablation,
     )
 
-    return ablated_class_accuracies, llm_test_accuracies  # type: ignore
+    return ablated_class_accuracies, ablated_class_aurocs, llm_clean_results
 
 
 def run_eval_single_sae(
@@ -726,7 +928,33 @@ def run_eval_single_sae(
             column1_vals_list = config.column1_vals_lookup[dataset_name]
             for column1_vals in column1_vals_list:
                 run_name = f"{dataset_name}_scr_{column1_vals[0]}_{column1_vals[1]}"
-                raw_results, llm_clean_accs = run_eval_single_dataset(
+                raw_results_acc, raw_results_auroc, llm_clean_results = (
+                    run_eval_single_dataset(
+                        dataset_name,
+                        config,
+                        sae,
+                        model,
+                        sae.cfg.hook_layer,
+                        sae.cfg.hook_name,
+                        device,
+                        artifacts_folder,
+                        save_activations,
+                        column1_vals,
+                    )
+                )
+
+                processed_results = get_scr_plotting_dict(
+                    raw_results_acc, raw_results_auroc, llm_clean_results
+                )
+
+                dataset_results[f"{run_name}_results"] = processed_results
+
+                averaging_names.append(run_name)
+
+        else:
+            run_name = f"{dataset_name}_tpp"
+            raw_results_acc, raw_results_auroc, llm_clean_results = (
+                run_eval_single_dataset(
                     dataset_name,
                     config,
                     sae,
@@ -736,32 +964,12 @@ def run_eval_single_sae(
                     device,
                     artifacts_folder,
                     save_activations,
-                    column1_vals,
                 )
-
-                processed_results = get_scr_plotting_dict(raw_results, llm_clean_accs)  # type: ignore
-
-                dataset_results[f"{run_name}_results"] = processed_results
-
-                averaging_names.append(run_name)
-
-        else:
-            run_name = f"{dataset_name}_tpp"
-            raw_results, llm_clean_accs = run_eval_single_dataset(
-                dataset_name,
-                config,
-                sae,
-                model,
-                sae.cfg.hook_layer,
-                sae.cfg.hook_name,
-                device,
-                artifacts_folder,
-                save_activations,
             )
 
+            # NOTE: create_tpp_plotting_dict needs update to handle AUROC
             processed_results, per_class_results = create_tpp_plotting_dict(
-                raw_results,  # type: ignore
-                llm_clean_accs,
+                raw_results_acc, raw_results_auroc, llm_clean_results
             )
             dataset_results[f"{run_name}_results"] = processed_results
             per_dataset_class_results[dataset_name] = per_class_results

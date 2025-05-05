@@ -6,7 +6,7 @@ import torch.nn as nn
 from beartype import beartype
 from jaxtyping import Bool, Float, Int, jaxtyped
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 import sae_bench.sae_bench_utils.dataset_info as dataset_info
 
@@ -173,7 +173,7 @@ def train_sklearn_probe(
 
     # Compute accuracies
     train_accuracy = accuracy_score(train_labels_np, probe.predict(train_inputs_np))
-    test_accuracy = accuracy_score(test_labels_np, probe.predict(test_inputs_np))
+    test_accuracy = float(accuracy_score(test_labels_np, probe.predict(test_inputs_np)))
 
     if verbose:
         print("\nTraining completed.")
@@ -203,8 +203,11 @@ def test_probe_gpu(
     labels: Int[torch.Tensor, "test_dataset_size"],
     batch_size: int,
     probe: Probe,
-) -> float:
+) -> tuple[float, float]:
     criterion = nn.BCEWithLogitsLoss()
+
+    all_logits_list = []
+    all_labels_list = []
 
     with torch.no_grad():
         corrects_0 = []
@@ -226,9 +229,27 @@ def test_probe_gpu(
             loss = criterion(logits_B, labels_B.to(dtype=probe.net.weight.dtype))
             losses.append(loss)
 
-        accuracy_all = torch.cat(all_corrects).mean().item()
+            # Store logits and labels for AUROC
+            all_logits_list.append(logits_B.cpu())
+            all_labels_list.append(labels_B.cpu())
 
-    return accuracy_all
+        accuracy_all = float(torch.cat(all_corrects).mean().item())
+
+        # Concatenate all logits and labels
+        all_logits = torch.cat(all_logits_list).numpy()
+        all_labels = torch.cat(all_labels_list).numpy()
+
+        # Calculate AUROC
+        try:
+            auroc = float(roc_auc_score(all_labels, all_logits))
+        except ValueError:
+            # Handle cases where only one class is present in labels
+            print(
+                "Warning: Could not compute AUROC, possibly due to only one class present in labels."
+            )
+            auroc = 0.5
+
+    return accuracy_all, auroc
 
 
 @jaxtyped(typechecker=beartype)
@@ -259,6 +280,7 @@ def train_probe_gpu(
     best_test_accuracy = 0.0
     best_probe = None
     patience_counter = 0
+    loss = torch.tensor(0.0)
     for epoch in range(epochs):
         indices = torch.randperm(len(train_inputs))
 
@@ -279,8 +301,12 @@ def train_probe_gpu(
             loss.backward()
             optimizer.step()
 
-        train_accuracy = test_probe_gpu(train_inputs, train_labels, batch_size, probe)
-        test_accuracy = test_probe_gpu(test_inputs, test_labels, batch_size, probe)
+        train_accuracy, _train_auroc = test_probe_gpu(
+            train_inputs, train_labels, batch_size, probe
+        )
+        test_accuracy, _test_auroc = test_probe_gpu(
+            test_inputs, test_labels, batch_size, probe
+        )
 
         if test_accuracy > best_test_accuracy:
             best_test_accuracy = test_accuracy
@@ -291,7 +317,7 @@ def train_probe_gpu(
 
         if verbose:
             print(
-                f"Epoch {epoch + 1}/{epochs} Loss: {loss.item()}, train accuracy: {train_accuracy}, test accuracy: {test_accuracy}"  # type: ignore
+                f"Epoch {epoch + 1}/{epochs} Loss: {loss.item()}, train accuracy: {train_accuracy}, test accuracy: {test_accuracy}"
             )
 
         if patience_counter >= early_stopping_patience:
