@@ -9,7 +9,6 @@
 - [Training Your Own SAEs](#training-your-own-saes)
 - [Graphing Results](#graphing-results)
 
-CURRENT REPO STATUS: SAE Bench is currently a beta release. This repo is still under development as we clean up some of the rough edges left over from the research process. However, it is usable in the current state for both SAE Lens SAEs and custom SAEs.
 
 ## Overview
 
@@ -18,7 +17,7 @@ SAE Bench is a comprehensive suite of 8 evaluations for Sparse Autoencoder (SAE)
 - **[Feature Absorption](https://arxiv.org/abs/2409.14507)**
 - **[AutoInterp](https://blog.eleuther.ai/autointerp/)**
 - **L0 / Loss Recovered**
-- **[RAVEL](https://arxiv.org/abs/2402.17700) (under development)**
+- **[RAVEL](https://arxiv.org/abs/2402.17700)**
 - **[Spurious Correlation Removal (SCR)](https://arxiv.org/abs/2411.18895)**
 - **[Targeted Probe Pertubation (TPP)](https://arxiv.org/abs/2411.18895)**
 - **Sparse Probing**
@@ -56,6 +55,12 @@ Autointerp requires the creation of `openai_api_key.txt`. Unlearning requires re
 
 We recommend to get starting by going through the `sae_bench_demo.ipynb` notebook. In this notebook, we load both a custom SAE and an SAE Lens SAE, run both of them on multiple evaluations, and plot graphs of the results.
 
+### Recommended Evaluation Practice
+
+When evaluating new SAE methods, we strongly recommend training multiple SAEs across a range of sparsities (e.g. L0 ∈ [20, 200]) alongside directly comparable baselines. Many evaluation metrics correlate strongly with sparsity, so assessing performance across multiple sparsity levels is essential to avoid misleading conclusions.
+
+This practice helps ensure that observed improvements are real and not just artifacts of sparsity or statistical noise. It also makes it easier to determine whether a method actually improves the Pareto frontier on target metrics.
+
 ## Running Evaluations with SAE Lens
 
 Each evaluation has an example command located in its respective `main.py` file. To run all evaluations on a selection of SAE Lens SAEs, refer to `shell_scripts/README.md`. Here's an example of how to run a sparse probing evaluation on a single SAE Bench Pythia-70M SAE:
@@ -83,6 +88,25 @@ For other SAE types, refer to `sae_bench/custom_saes/run_all_evals_custom_saes.p
 
 We currently have a suite of SAE Bench SAEs on layer 8 of Pythia-160M and layer 12 of Gemma-2-2B, each trained on 500M tokens with some having checkpoints at various points. These SAEs can serve as baselines for any new custom SAEs. We also have baseline eval results, saved [here](https://huggingface.co/datasets/adamkarvonen/sae_bench_results_0125). For more information, refer to `sae_bench/custom_saes/README.md`.
 
+## Using New Models / Adjusting VRAM Usage
+
+SAE Bench primarily supports Pythia and Gemma models out of the box. If you want to use a different model, you’ll need to make a couple of minor changes:
+
+1. **Set Batch Size and `dtype`**  
+   Update the batch size and `dtype` for your model in [`activation_collection.py`](https://github.com/adamkarvonen/SAEBench/blob/main/sae_bench/sae_bench_utils/activation_collection.py#L14-L30).  
+   All evaluations use a roughly constant batch size, scaled appropriately using these constants. The defaults are tuned for running Gemma-2-2B on a 24GB GPU. If you're using a GPU with more VRAM, consider increasing the batch size to improve utilization. Note: We recommend that you ensure the batch size is constant for all SAEs you are evaluating, as some evaluations have steps that may get slightly different results with a varying batch size - for example, such as when training a binary mask.
+
+2. **(RAVEL Only) Add Submodule String**  
+   If you're running the RAVEL evaluation, you'll also need to [add the submodule string](https://github.com/adamkarvonen/SAEBench/blob/main/sae_bench/sae_bench_utils/activation_collection.py#L33-L39) for your model. There’s an example of how to do this in the docstring.
+
+## Configuration Settings
+
+To exactly reproduce SAE Bench results from the paper, each evaluation comes with a default `eval_config.py` file containing the recommended configuration values.
+
+Most evaluation scripts will automatically use these defaults. For reference, the scripts in `shell_scripts/run.sh` and `sae_bench/custom_saes/run_all_evals_dictionary_learning_saes.py` use the same default settings as reported in the paper.
+
+If you wish to customize hyperparameters, you can modify the relevant `eval_config.py` files in each evaluation directory.
+
 ## Training Your Own SAEs
 
 You can deterministically replicate the training of our SAEs using scripts provided [here](https://github.com/adamkarvonen/dictionary_learning_demo), or implement your own SAE, or make a change to one of our SAE implementations. Once you train your new version, you can benchmark against our existing SAEs for a true apples to apples comparison.
@@ -98,7 +122,7 @@ The computational requirements for running SAEBench evaluations were measured on
 - **Setup Phase**: Includes operations like precomputing model activations, training probes, or other one-time preprocessing steps which can be reused across multiple SAE evaluations.
 - **Per-SAE Evaluation Time**: The time required to evaluate a single SAE once the setup is complete.
 
-The total evaluation time for a single SAE across all benchmarks is approximately **65 minutes**, with an additional **107 minutes** of setup time. Note that actual runtimes may vary significantly based on factors such as SAE dictionary size, base model, and GPU selection.
+The total evaluation time for a single SAE across all benchmarks is approximately **110 minutes**, with an additional **152 minutes** of setup time. Note that actual runtimes may vary significantly based on factors such as SAE dictionary size, base model, and GPU selection.
 
 | Evaluation Type | Avg Time per SAE (min) | Setup Time (min) |
 | --------------- | ---------------------- | ---------------- |
@@ -109,7 +133,34 @@ The total evaluation time for a single SAE across all benchmarks is approximatel
 | Sparse Probing  | 3                      | 15               |
 | Auto-Interp     | 9                      | 0                |
 | Unlearning      | 10                     | 33               |
-| **Total**       | **65**                 | **107**          |
+| RAVEL           | 45                     | 45               |
+| **Total**       | **110**                | **152**          |
+
+
+# SAE Bench Baseline Suite
+
+We provide a suite of baseline SAEs. We have the following 7 SAE varieties:
+
+- ReLU (Anthropic April Update)
+- TopK
+- BatchTopK
+- JumpReLU
+- Gated
+- P-anneal
+- Matryoshka BatchTopK
+
+Trained across 3 widths (4k, 16k, and 65k), 6 sparsities (~20 to ~640), on layer 8 of Pythia-160M and layer 12 of Gemma-2-2B. Additionally, we have checkpoints throughout training for TopK and RelU variants for Gemma-2-2B 16k and 65k widths. The SAEs are located in the following HuggingFace repos:
+
+- [Pythia-160M 4k width](https://huggingface.co/adamkarvonen/saebench_pythia-160m-deduped_width-2pow12_date-0108)
+- [Pythia-160M 16k width](https://huggingface.co/adamkarvonen/saebench_pythia-160m-deduped_width-2pow14_date-0108)
+- [Pythia-160M 65k width](https://huggingface.co/adamkarvonen/saebench_pythia-160m-deduped_width-2pow16_date-0108)
+- [Gemma-2-2B 4k width](https://huggingface.co/adamkarvonen/saebench_gemma-2-2b_width-2pow12_date-0108)
+- [Gemma-2-2B 16k width](https://huggingface.co/canrager/saebench_gemma-2-2b_width-2pow14_date-0107)
+- [Gemma-2-2B 65k width](https://huggingface.co/canrager/saebench_gemma-2-2b_width-2pow16_date-0107)
+
+All results from these SAEs, plus PCA / residual stream baselines, are contained [here](https://huggingface.co/datasets/adamkarvonen/sae_bench_results_0125).
+
+To evaluate these SAEs, refer to `custom_saes/run_all_evals_dictionary_learning.py`.
 
 ## Development
 

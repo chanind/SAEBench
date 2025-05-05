@@ -14,6 +14,7 @@ import sae_bench.custom_saes.topk_sae as topk_sae
 import sae_bench.evals.absorption.main as absorption
 import sae_bench.evals.autointerp.main as autointerp
 import sae_bench.evals.core.main as core
+import sae_bench.evals.ravel.main as ravel
 import sae_bench.evals.scr_and_tpp.main as scr_and_tpp
 import sae_bench.evals.sparse_probing.main as sparse_probing
 import sae_bench.evals.unlearning.main as unlearning
@@ -48,6 +49,7 @@ output_folders = {
     "tpp": "eval_results/tpp",
     "sparse_probing": "eval_results/sparse_probing",
     "unlearning": "eval_results/unlearning",
+    "ravel": "eval_results/ravel",
 }
 
 
@@ -212,6 +214,20 @@ def run_evals(
                 device=device,
             )
         ),
+        "ravel": (
+            lambda selected_saes, is_final: ravel.run_eval(
+                ravel.RAVELEvalConfig(
+                    model_name=model_name,
+                    random_seed=random_seed,
+                    llm_batch_size=llm_batch_size // 4,
+                    llm_dtype=llm_dtype,
+                ),
+                selected_saes,
+                device,
+                "eval_results/ravel",
+                force_rerun,
+            )
+        ),
         "scr": (
             lambda selected_saes, is_final: scr_and_tpp.run_eval(
                 scr_and_tpp.ScrAndTppEvalConfig(
@@ -307,27 +323,32 @@ def run_evals(
 
         print(f"\n\n\nRunning {eval_type} evaluation\n\n\n")
 
-        for i, sae_location in enumerate(sae_locations):
-            is_final = False
-            if i == len(sae_locations) - 1:
-                is_final = True
+        try:
+            for i, sae_location in enumerate(sae_locations):
+                is_final = False
+                if i == len(sae_locations) - 1:
+                    is_final = True
 
-            sae = load_dictionary_learning_sae(
-                repo_id=repo_id,
-                location=sae_location,
-                layer=None,
-                model_name=model_name,
-                device=device,
-                dtype=general_utils.str_to_dtype(llm_dtype),
-            )
-            unique_sae_id = sae_location.replace("/", "_")
-            unique_sae_id = f"{repo_id.split('/')[1]}_{unique_sae_id}"
-            selected_saes = [(unique_sae_id, sae)]
+                sae = load_dictionary_learning_sae(
+                    repo_id=repo_id,
+                    location=sae_location,
+                    layer=None,
+                    model_name=model_name,
+                    device=device,
+                    dtype=general_utils.str_to_dtype(llm_dtype),
+                )
+                unique_sae_id = sae_location.replace("/", "_")
+                unique_sae_id = f"{repo_id.split('/')[1]}_{unique_sae_id}"
+                selected_saes = [(unique_sae_id, sae)]
 
-            os.makedirs(output_folders[eval_type], exist_ok=True)
-            eval_runners[eval_type](selected_saes, is_final)
+                os.makedirs(output_folders[eval_type], exist_ok=True)
+                eval_runners[eval_type](selected_saes, is_final)
 
-            del sae
+                del sae
+
+        except Exception as e:
+            print(f"Error running {eval_type} evaluation: {e}")
+            continue
 
 
 if __name__ == "__main__":
@@ -356,6 +377,7 @@ if __name__ == "__main__":
         "sparse_probing",
         "autointerp",
         # "unlearning",
+        "ravel",
     ]
 
     if "autointerp" in eval_types:

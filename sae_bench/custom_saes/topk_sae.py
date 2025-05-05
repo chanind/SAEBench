@@ -8,6 +8,9 @@ import sae_bench.custom_saes.base_sae as base_sae
 
 
 class TopKSAE(base_sae.BaseSAE):
+    threshold: torch.Tensor
+    k: torch.Tensor
+
     def __init__(
         self,
         d_in: int,
@@ -49,7 +52,7 @@ class TopKSAE(base_sae.BaseSAE):
             )
             return encoded_acts_BF
 
-        post_topk = post_relu_feat_acts_BF.topk(self.k, sorted=False, dim=-1)
+        post_topk = post_relu_feat_acts_BF.topk(self.k, sorted=False, dim=-1)  # type: ignore
 
         tops_acts_BK = post_topk.values
         top_indices_BK = post_topk.indices
@@ -124,7 +127,10 @@ def load_dictionary_learning_topk_sae(
     }
 
     if "threshold" in pt_params:
-        key_mapping["threshold"] = "threshold"
+        if use_threshold_at_inference:
+            key_mapping["threshold"] = "threshold"
+        else:
+            del pt_params["threshold"]
 
     # Create a new dictionary with renamed keys
     renamed_params = {key_mapping.get(k, k): v for k, v in pt_params.items()}

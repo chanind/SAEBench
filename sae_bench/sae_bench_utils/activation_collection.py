@@ -8,7 +8,7 @@ from jaxtyping import Bool, Float, Int, jaxtyped
 from sae_lens import SAE
 from tqdm import tqdm
 from transformer_lens import HookedTransformer
-from transformers import AutoTokenizer
+from transformers import AutoTokenizer, AutoModelForCausalLM, BatchEncoding
 
 # Relevant at ctx len 128
 LLM_NAME_TO_BATCH_SIZE = {
@@ -30,7 +30,50 @@ LLM_NAME_TO_DTYPE = {
 }
 
 
-# beartype struggles with the tokenizer
+def get_module(model: AutoModelForCausalLM, layer_num: int) -> torch.nn.Module:
+    """If missing, refer to sae_bench/sae_bench_utils/misc_notebooks/test_submodule.ipynb for an example of how to get the module for a given model."""
+    if model.config.architectures[0] == "Gemma2ForCausalLM":
+        return model.model.layers[layer_num]
+    elif model.config.architectures[0] == "GPTNeoXForCausalLM":
+        return model.gpt_neox.layers[layer_num]
+    else:
+        raise ValueError(
+            f"Model {model.config.architectures[0]} not supported, please add the appropriate module. See docstring for get_module()"
+        )
+
+
+@torch.no_grad()
+def get_layer_activations(
+    model: AutoModelForCausalLM,
+    target_layer: int,
+    inputs: BatchEncoding,
+    source_pos_B: torch.Tensor,
+) -> torch.Tensor:
+    acts_BLD = None
+
+    def gather_target_act_hook(module, inputs, outputs):
+        nonlocal acts_BLD
+        acts_BLD = outputs[0]
+        return outputs
+
+    handle = get_module(model, target_layer).register_forward_hook(
+        gather_target_act_hook
+    )
+
+    _ = model(
+        input_ids=inputs["input_ids"].to(model.device),
+        attention_mask=inputs.get("attention_mask", None),
+    )
+
+    handle.remove()
+
+    assert acts_BLD is not None
+
+    acts_BD = acts_BLD[list(range(acts_BLD.shape[0])), source_pos_B, :].clone()
+
+    return acts_BD
+
+
 @jaxtyped(typechecker=beartype)
 @torch.no_grad
 def get_bos_pad_eos_mask(
@@ -80,7 +123,7 @@ def get_llm_activations(
 
         if mask_bos_pad_eos_tokens:
             attn_mask_BL = get_bos_pad_eos_mask(tokens_BL, model.tokenizer)
-            acts_BLD = acts_BLD * attn_mask_BL[:, :, None]
+            acts_BLD = acts_BLD * attn_mask_BL[:, :, None]  # type: ignore
 
         all_acts_BLD.append(acts_BLD)
 
@@ -375,7 +418,7 @@ def encode_precomputed_activations(
                 sae_act_BLF = sae_act_BLF[:, :, selected_latents]
 
             if mask_bos_pad_eos_tokens:
-                attn_mask_BL = get_bos_pad_eos_mask(tokens_BL, sae.model.tokenizer)
+                attn_mask_BL = get_bos_pad_eos_mask(tokens_BL, sae.model.tokenizer)  # type: ignore
             else:
                 attn_mask_BL = torch.ones_like(tokens_BL, dtype=torch.bool)
 
