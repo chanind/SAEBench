@@ -181,7 +181,8 @@ def sae_k_sparse_metadata(
     layer: int,
 ) -> pd.DataFrame:
     norm_probe_weights = probe.weights / torch.norm(probe.weights, dim=-1, keepdim=True)
-    norm_W_enc = sae.W_enc / torch.norm(sae.W_enc, dim=0, keepdim=True)
+    W_enc = sae.W_enc if hasattr(sae, "W_enc") else sae.W_dec.T
+    norm_W_enc = W_enc / torch.norm(W_enc, dim=0, keepdim=True)
     norm_W_dec = sae.W_dec / torch.norm(sae.W_dec, dim=-1, keepdim=True)
     probe_dec_cos = (
         (
