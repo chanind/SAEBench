@@ -128,7 +128,7 @@ def train_k_sparse_probes(
         )
         train_activations = train_activations.to(sae.device, dtype=sae.dtype)
 
-    @torch.inference_mode()
+    @torch.no_grad()
     def map_acts(acts: torch.Tensor) -> torch.Tensor:
         return sae.encode(acts.to(sae.device, dtype=sae.dtype))
 
