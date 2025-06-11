@@ -127,6 +127,11 @@ def train_k_sparse_probes(
             torch.tensor([idx for _, idx in train_labels])
         )
         train_activations = train_activations.to(sae.device, dtype=sae.dtype)
+
+    @torch.inference_mode()
+    def map_acts(acts: torch.Tensor) -> torch.Tensor:
+        return sae.encode(acts.to(sae.device, dtype=sae.dtype))
+
     l1_probe = (
         train_sparse_multi_probe(
             train_activations,
@@ -135,7 +140,7 @@ def train_k_sparse_probes(
             num_epochs=num_epochs,
             batch_size=batch_size,
             device=sae.device,
-            map_acts=lambda acts: sae.encode(acts.to(sae.device, dtype=sae.dtype)),
+            map_acts=map_acts,
             probe_dim=sae.cfg.d_sae,
         )
         .float()
