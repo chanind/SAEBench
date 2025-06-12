@@ -145,7 +145,8 @@ def load_and_format_sae(
         sae = sae_object_or_sae_lens_id
         sae_id = "custom_sae"
         sparsity = None
-        check_decoder_norms(sae.W_dec.data)
+        if sae.cfg.architecture != "matching_pursuit":
+            check_decoder_norms(sae.W_dec.data)
 
     return sae_id, sae, sparsity
 
