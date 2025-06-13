@@ -115,6 +115,7 @@ def train_k_sparse_probes(
     l1_decay: float = 0.01,
     batch_size: int = 4096,
     num_epochs: int = 50,
+    precalc_sae_acts: bool = False,
 ) -> dict[int, dict[int, KSparseProbe]]:  # dict[k, dict[letter_id, probe]]
     """
     Train k-sparse probes for each k in ks.
@@ -127,9 +128,13 @@ def train_k_sparse_probes(
             torch.tensor([idx for _, idx in train_labels])
         )
         train_activations = train_activations.to(sae.device, dtype=sae.dtype)
+        if precalc_sae_acts:
+            train_activations = _get_sae_acts(
+                sae, train_activations, batch_size=batch_size
+            )
 
     @torch.no_grad()
-    def map_acts(acts: torch.Tensor) -> torch.Tensor:
+    def map_sae_acts(acts: torch.Tensor) -> torch.Tensor:
         return sae.encode(acts.to(sae.device, dtype=sae.dtype))
 
     l1_probe = (
@@ -140,7 +145,7 @@ def train_k_sparse_probes(
             num_epochs=num_epochs,
             batch_size=batch_size,
             device=sae.device,
-            map_acts=map_acts,
+            map_acts=map_sae_acts if not precalc_sae_acts else None,
             probe_dim=sae.cfg.d_sae,
         )
         .float()
@@ -153,16 +158,21 @@ def train_k_sparse_probes(
                 for label in labels:
                     # using topk and not abs() because we only want features that directly predict the label
                     sparse_feat_ids = l1_probe.weights[label].topk(k).indices
-                    train_k_x = (
-                        _get_sae_acts(
-                            sae,
-                            train_activations,
-                            sparse_feat_ids=sparse_feat_ids,
-                            batch_size=batch_size,
+                    if precalc_sae_acts:
+                        train_k_x = (
+                            train_activations[:, sparse_feat_ids].float().numpy()
                         )
-                        .float()
-                        .numpy()
-                    )
+                    else:
+                        train_k_x = (
+                            _get_sae_acts(
+                                sae,
+                                train_activations,
+                                sparse_feat_ids=sparse_feat_ids,
+                                batch_size=batch_size,
+                            )
+                            .float()
+                            .numpy()
+                        )
                     # Use SKLearn here because it's much faster than torch if the data is small
                     sk_probe = LogisticRegression(
                         max_iter=500, class_weight="balanced"
@@ -288,6 +298,7 @@ def load_and_run_eval_probe_and_sae_k_sparse_raw_scores(
     k_sparse_probe_l1_decay: float = 0.01,
     k_sparse_probe_batch_size: int = 4096,
     k_sparse_probe_num_epochs: int = 50,
+    precalc_k_sparse_probe_sae_acts: bool = False,
     eval_batch_size: int = 24,
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     if verbose:
@@ -319,6 +330,7 @@ def load_and_run_eval_probe_and_sae_k_sparse_raw_scores(
         l1_decay=k_sparse_probe_l1_decay,
         batch_size=k_sparse_probe_batch_size,
         num_epochs=k_sparse_probe_num_epochs,
+        precalc_sae_acts=precalc_k_sparse_probe_sae_acts,
     )
     with torch.no_grad():
         if verbose:
@@ -462,6 +474,7 @@ def run_k_sparse_probing_experiment(
     k_sparse_probe_l1_decay: float = 0.01,  # noqa: ARG001
     k_sparse_probe_batch_size: int = 4096,
     k_sparse_probe_num_epochs: int = 50,
+    precalc_k_sparse_probe_sae_acts: bool = False,
     verbose: bool = True,
 ) -> pd.DataFrame:
     task_output_dir = get_or_make_dir(experiment_dir) / sae_name
@@ -490,6 +503,7 @@ def run_k_sparse_probing_experiment(
                 k_sparse_probe_l1_decay=k_sparse_probe_l1_decay,
                 k_sparse_probe_batch_size=k_sparse_probe_batch_size,
                 k_sparse_probe_num_epochs=k_sparse_probe_num_epochs,
+                precalc_k_sparse_probe_sae_acts=precalc_k_sparse_probe_sae_acts,
                 device=device,
             ),
             (raw_results_path, metadata_results_path),
