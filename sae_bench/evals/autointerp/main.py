@@ -41,6 +41,7 @@ from sae_bench.sae_bench_utils.indexing_utils import (
 from sae_bench.sae_bench_utils.sae_selection_utils import (
     get_saes_from_regex,
 )
+from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 Messages: TypeAlias = list[dict[Literal["role", "content"], str]]
 
@@ -402,8 +403,8 @@ class AutoInterp:
             self.model,
             self.sae,
             self.cfg.llm_batch_size,
-            self.sae.cfg.hook_layer,
-            self.sae.cfg.hook_name,
+            norm_cfg(self.sae).hook_layer,
+            norm_cfg(self.sae).hook_name,
             mask_bos_pad_eos_tokens=True,
             selected_latents=self.latents,
             activation_dtype=torch.bfloat16,  # reduce memory usage, we don't need full precision when sampling activations
@@ -549,8 +550,8 @@ def run_eval_single_sae(
             model,
             sae,
             config.llm_batch_size,
-            sae.cfg.hook_layer,
-            sae.cfg.hook_name,
+            norm_cfg(sae).hook_layer,
+            norm_cfg(sae).hook_name,
             mask_bos_pad_eos_tokens=True,
         )
 

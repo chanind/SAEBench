@@ -12,6 +12,7 @@ import sae_bench.sae_bench_utils.dataset_utils as dataset_utils
 from sae_bench.sae_bench_utils.activation_collection import (
     get_feature_activation_sparsity,
 )
+from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 FORGET_FILENAME = "feature_sparsity_forget.txt"
 RETAIN_FILENAME = "feature_sparsity_retain.txt"
@@ -136,8 +137,8 @@ def calculate_sparsity(
             model,
             sae,
             batch_size=batch_size,
-            layer=sae.cfg.hook_layer,
-            hook_name=sae.cfg.hook_name,
+            layer=norm_cfg(sae).hook_layer,
+            hook_name=norm_cfg(sae).hook_name,
             mask_bos_pad_eos_tokens=True,
         )
         .cpu()
@@ -149,8 +150,8 @@ def calculate_sparsity(
             model,
             sae,
             batch_size=batch_size,
-            layer=sae.cfg.hook_layer,
-            hook_name=sae.cfg.hook_name,
+            layer=norm_cfg(sae).hook_layer,
+            hook_name=norm_cfg(sae).hook_name,
             mask_bos_pad_eos_tokens=True,
         )
         .cpu()

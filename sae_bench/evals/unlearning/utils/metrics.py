@@ -28,6 +28,7 @@ from sae_bench.evals.unlearning.utils.var import (
     PRE_QUESTION_FORMAT,
     PRE_WMDP_BIO,
 )
+from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 all_permutations = list(permutations([0, 1, 2, 3]))
 
@@ -176,7 +177,7 @@ def calculate_MCQ_metrics(
         ]
         prompts = [item for sublist in prompts for item in sublist]
 
-        answers = [[p.index(answer) for p in permutations] for answer in answers]
+        answers = [[p.index(answer) for p in permutations] for answer in answers]  # type: ignore
         answers = [item for sublist in answers for item in sublist]
 
     actual_answers = answers
@@ -460,7 +461,7 @@ def modify_model(model, sae, **ablate_params):
         "custom_hook_point" not in ablate_params
         or ablate_params["custom_hook_point"] is None
     ):
-        hook_point = sae.cfg.hook_name
+        hook_point = norm_cfg(sae).hook_name
     else:
         hook_point = ablate_params["custom_hook_point"]
 
@@ -708,7 +709,7 @@ def calculate_metrics_list(
         intervention_method = ablate_params["intervention_method"]
         multiplier = ablate_params["multiplier"]
         n_features = len(ablate_params["features_to_ablate"])
-        layer = sae.cfg.hook_layer
+        layer = norm_cfg(sae).hook_layer
 
         save_file_name = f"{intervention_method}_multiplier{multiplier}_nfeatures{n_features}_layer{layer}_retainthres{retain_threshold}.pkl"
         full_path = os.path.join(save_metrics_dir, save_file_name)  # type: ignore

@@ -12,6 +12,7 @@ from transformers import (
 import sae_bench.sae_bench_utils.activation_collection as activation_collection
 from sae_bench.evals.ravel.eval_config import RAVELEvalConfig
 from sae_bench.evals.ravel.mdas import MDAS
+from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 
 class MDBM(nn.Module):
@@ -27,7 +28,7 @@ class MDBM(nn.Module):
         self.model = model
         self.tokenizer = tokenizer
         self.sae = sae
-        self.layer_intervened = sae.cfg.hook_layer
+        self.layer_intervened = norm_cfg(sae).hook_layer
         self.binary_mask = torch.nn.Parameter(
             torch.zeros(sae.cfg.d_sae, device=model.device, dtype=torch.float32),
             requires_grad=True,

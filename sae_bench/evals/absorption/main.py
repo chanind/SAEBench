@@ -32,6 +32,7 @@ from sae_bench.sae_bench_utils import (
     get_sae_lens_version,
 )
 from sae_bench.sae_bench_utils.sae_selection_utils import get_saes_from_regex
+from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 
 def run_eval(
@@ -82,7 +83,7 @@ def run_eval(
         k_sparse_probing_results = run_k_sparse_probing_experiment(
             model=model,
             sae=sae,
-            layer=sae.cfg.hook_layer,
+            layer=norm_cfg(sae).hook_layer,
             sae_name=f"{sae_release}_{sae_id}",
             force=force_rerun,
             max_k_value=config.max_k_value,
@@ -118,7 +119,7 @@ def run_eval(
         raw_df = run_feature_absortion_experiment(
             model=model,
             sae=sae,
-            layer=sae.cfg.hook_layer,
+            layer=norm_cfg(sae).hook_layer,
             sae_name=f"{sae_release}_{sae_id}",
             force=force_rerun,
             max_k_value=config.max_k_value,

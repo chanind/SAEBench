@@ -42,6 +42,7 @@ from sae_bench.sae_bench_utils import (
 from sae_bench.sae_bench_utils.sae_selection_utils import (
     get_saes_from_regex,
 )
+from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 # For our initial experiments, we only used transformer_lens and the shorter LLM names
 # For RAVEL, we use HF transformers, which requires the full model name
@@ -504,7 +505,7 @@ def run_eval(
             artifacts_path,
             EVAL_TYPE_ID_RAVEL,
             config.model_name,
-            sae.cfg.hook_name,
+            norm_cfg(sae).hook_name,
         )
 
         eval_results, per_class_dict = run_eval_single_sae(

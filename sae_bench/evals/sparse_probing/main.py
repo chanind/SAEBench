@@ -34,6 +34,7 @@ from sae_bench.sae_bench_utils import (
 from sae_bench.sae_bench_utils.sae_selection_utils import (
     get_saes_from_regex,
 )
+from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 
 def get_dataset_activations(
@@ -260,8 +261,8 @@ def run_eval_single_sae(
             config,
             sae,
             model,
-            sae.cfg.hook_layer,
-            sae.cfg.hook_name,
+            norm_cfg(sae).hook_layer,
+            norm_cfg(sae).hook_name,
             device,
             artifacts_folder,
             save_activations,
@@ -331,7 +332,7 @@ def run_eval(
             artifacts_path,
             EVAL_TYPE_ID_SPARSE_PROBING,
             config.model_name,
-            sae.cfg.hook_name,
+            norm_cfg(sae).hook_name,
         )
 
         sparse_probing_results, per_class_dict = run_eval_single_sae(

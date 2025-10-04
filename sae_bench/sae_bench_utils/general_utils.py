@@ -8,7 +8,7 @@ from typing import Any, Callable
 import pandas as pd
 import torch
 from sae_lens import SAE
-from sae_lens.toolkit.pretrained_saes_directory import get_pretrained_saes_directory
+from sae_lens.loading.pretrained_saes_directory import get_pretrained_saes_directory
 
 
 def str_to_dtype(dtype_str: str) -> torch.dtype:
@@ -134,7 +134,7 @@ def load_and_format_sae(
 ) -> tuple[str, SAE, torch.Tensor | None] | None:
     """Handle both pretrained SAEs (identified by string) and custom SAEs (passed as objects)"""
     if isinstance(sae_object_or_sae_lens_id, str):
-        sae, _, sparsity = SAE.from_pretrained(
+        sae, _, sparsity = SAE.from_pretrained_with_cfg_and_sparsity(
             release=sae_release_or_unique_id,
             sae_id=sae_object_or_sae_lens_id,
             device=device,
