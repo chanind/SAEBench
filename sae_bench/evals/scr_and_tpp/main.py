@@ -39,7 +39,6 @@ from sae_bench.sae_bench_utils import (
     get_sae_lens_version,
 )
 from sae_bench.sae_bench_utils.sae_selection_utils import get_saes_from_regex
-from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 COLUMN2_VALS_LOOKUP = {
     "LabHC/bias_in_bios_class_set1": ("male", "female"),
@@ -708,8 +707,8 @@ def run_eval_single_sae(
                     config,
                     sae,
                     model,
-                    norm_cfg(sae).hook_layer,
-                    norm_cfg(sae).hook_name,
+                    sae.cfg.hook_layer,
+                    sae.cfg.hook_name,
                     device,
                     artifacts_folder,
                     save_activations,
@@ -729,8 +728,8 @@ def run_eval_single_sae(
                 config,
                 sae,
                 model,
-                norm_cfg(sae).hook_layer,
-                norm_cfg(sae).hook_name,
+                sae.cfg.hook_layer,
+                sae.cfg.hook_name,
                 device,
                 artifacts_folder,
                 save_activations,
@@ -813,7 +812,7 @@ def run_eval(
             artifacts_path,
             eval_type,
             config.model_name,
-            norm_cfg(sae).hook_name,
+            sae.cfg.hook_name,
         )
 
         scr_or_tpp_results, per_dataset_class_results = run_eval_single_sae(

@@ -45,7 +45,6 @@ from sae_bench.sae_bench_utils import (
     get_sae_bench_version,
     get_sae_lens_version,
 )
-from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 logger = logging.getLogger(__name__)
 
@@ -128,7 +127,7 @@ def run_evals(
     ignore_tokens: set[int | None] = set(),
     verbose: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    hook_name = norm_cfg(sae).hook_name
+    hook_name = sae.cfg.hook_name
     actual_batch_size = (
         eval_config.batch_size_prompts or activation_store.store_batch_size_prompts
     )
@@ -339,7 +338,7 @@ def get_featurewise_weight_based_metrics(sae: SAE) -> dict[str, Any]:
     # gated models have a different bias (no b_enc)
     if not hasattr(sae, "b_enc") and not hasattr(sae, "b_mag"):
         encoder_bias = torch.zeros(sae.cfg.d_sae).cpu().tolist()
-    elif norm_cfg(sae).architecture != "gated":
+    elif sae.cfg.architecture != "gated":
         encoder_bias = sae.b_enc.cpu().tolist()  # type: ignore
     else:
         encoder_bias = sae.b_mag.cpu().tolist()  # type: ignore
@@ -449,8 +448,8 @@ def get_sparsity_and_variance_metrics(
     ignore_tokens: set[int | None] = set(),
     verbose: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    hook_name = norm_cfg(sae).hook_name
-    hook_head_index = norm_cfg(sae).hook_head_index
+    hook_name = sae.cfg.hook_name
+    hook_head_index = sae.cfg.hook_head_index
 
     metric_dict = {}
     feature_metric_dict = {}
@@ -504,7 +503,7 @@ def get_sparsity_and_variance_metrics(
             batch_tokens,
             prepend_bos=False,
             names_filter=[hook_name],
-            stop_at_layer=norm_cfg(sae).hook_layer + 1,
+            stop_at_layer=sae.cfg.hook_layer + 1,
             **model_kwargs,
         )
 
@@ -649,8 +648,8 @@ def get_recons_loss(
     exclude_special_tokens_from_reconstruction: bool = False,
     model_kwargs: Mapping[str, Any] = {},
 ) -> dict[str, Any]:
-    hook_name = norm_cfg(sae).hook_name
-    head_index = norm_cfg(sae).hook_head_index
+    hook_name = sae.cfg.hook_name
+    head_index = sae.cfg.hook_head_index
 
     original_logits, original_ce_loss = model(
         batch_tokens, return_type="both", loss_per_token=True, **model_kwargs
@@ -1021,7 +1020,7 @@ def multiple_evals(
             print(f"Skipping {sae_release}_{sae_id} as results already exist")
             continue
 
-        if current_model_str != norm_cfg(sae).model_name:
+        if current_model_str != sae.cfg.model_name:
             # Wrap model loading with retry
             @general_utils.retry_with_exponential_backoff(
                 retries=5,
@@ -1033,20 +1032,18 @@ def multiple_evals(
             )
             def load_model():
                 return HookedTransformer.from_pretrained_no_processing(
-                    norm_cfg(sae).model_name,
+                    sae.cfg.model_name,
                     device=device,
                     dtype=sae.W_enc.dtype,
-                    **norm_cfg(sae).model_from_pretrained_kwargs,
+                    **sae.cfg.model_from_pretrained_kwargs,
                 )
 
             try:
                 del current_model  # type: ignore
-                current_model_str = norm_cfg(sae).model_name
+                current_model_str = sae.cfg.model_name
                 current_model = load_model()
             except Exception as e:
-                logger.error(
-                    f"Failed to load model {norm_cfg(sae).model_name}: {str(e)}"
-                )
+                logger.error(f"Failed to load model {sae.cfg.model_name}: {str(e)}")
                 continue  # Skip this SAE and continue with the next one
 
         assert current_model is not None  # type: ignore
@@ -1054,7 +1051,7 @@ def multiple_evals(
         try:
             # Create a CoreEvalConfig for this specific evaluation
             core_eval_config = CoreEvalConfig(
-                model_name=norm_cfg(sae).model_name,
+                model_name=sae.cfg.model_name,
                 batch_size_prompts=multiple_evals_config.batch_size_prompts or 16,
                 n_eval_reconstruction_batches=multiple_evals_config.n_eval_reconstruction_batches,
                 n_eval_sparsity_variance_batches=multiple_evals_config.n_eval_sparsity_variance_batches,

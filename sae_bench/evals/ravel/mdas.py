@@ -8,7 +8,6 @@ from transformers import (
 
 import sae_bench.sae_bench_utils.activation_collection as activation_collection
 from sae_bench.evals.ravel.eval_config import RAVELEvalConfig
-from sae_bench.sae_bench_utils.sae_utils import norm_cfg
 
 
 class MDAS(nn.Module):
@@ -24,7 +23,7 @@ class MDAS(nn.Module):
         self.model = model
         self.tokenizer = tokenizer
         self.sae = sae  # Kept for API compatibility
-        self.layer_intervened = norm_cfg(sae).hook_layer
+        self.layer_intervened = sae.cfg.hook_layer
 
         # Get the hidden dimension from the model
         hidden_dim = model.config.hidden_size
