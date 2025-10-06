@@ -300,8 +300,8 @@ def _standardize_sae_cfg(cfg: Any):
     model_name = _get_cfg_meta_field(cfg, "model_name")
     hook_head_index = _get_cfg_meta_field(cfg, "hook_head_index")
     exclude_special_tokens = _get_cfg_meta_field(cfg, "exclude_special_tokens")
-    model_from_pretrained_kwargs = _get_cfg_meta_field(
-        cfg, "model_from_pretrained_kwargs"
+    model_from_pretrained_kwargs = (
+        _get_cfg_meta_field(cfg, "model_from_pretrained_kwargs") or {}
     )
     prepend_bos = _get_cfg_meta_field(cfg, "prepend_bos")
     if hook_layer is None:
