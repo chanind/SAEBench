@@ -141,7 +141,12 @@ def load_and_format_sae(
             device=device,
         )
         sae_id = sae_object_or_sae_lens_id
-        sae.fold_W_dec_norm()
+        try:
+            sae.fold_W_dec_norm()
+        except NotImplementedError:
+            print(
+                f"Failed to fold W_dec norm for {sae_release_or_unique_id}_{sae_object_or_sae_lens_id}"
+            )
     else:
         sae = sae_object_or_sae_lens_id
         sae_id = "custom_sae"
