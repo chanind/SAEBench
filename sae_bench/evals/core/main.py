@@ -338,10 +338,10 @@ def get_featurewise_weight_based_metrics(sae: SAE) -> dict[str, Any]:
     # gated models have a different bias (no b_enc)
     if not hasattr(sae, "b_enc") and not hasattr(sae, "b_mag"):
         encoder_bias = torch.zeros(sae.cfg.d_sae).cpu().tolist()
-    elif sae.cfg.architecture != "gated":
-        encoder_bias = sae.b_enc.cpu().tolist()  # type: ignore
-    else:
+    elif sae.cfg.architecture_str == "gated":
         encoder_bias = sae.b_mag.cpu().tolist()  # type: ignore
+    else:
+        encoder_bias = sae.b_enc.cpu().tolist()  # type: ignore
 
     encoder_decoder_cosine_sim = (
         torch.nn.functional.cosine_similarity(
