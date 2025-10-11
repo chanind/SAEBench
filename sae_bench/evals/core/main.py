@@ -1081,6 +1081,7 @@ def multiple_evals(
                     sae,
                     context_size=context_size,
                     dataset=dataset,
+                    dataset_trust_remote_code=True,
                 )
 
             activation_store = create_activation_store()
