@@ -342,6 +342,8 @@ def run_eval(
             artifacts_folder,
             save_activations=save_activations,
         )
+        cfg_dict = {**asdict(sae.cfg)}
+        del cfg_dict["metadata"]
         eval_output = SparseProbingEvalOutput(
             eval_config=config,
             eval_id=eval_instance_id,
@@ -375,7 +377,7 @@ def run_eval(
             sae_lens_id=sae_id,
             sae_lens_release_id=sae_release,
             sae_lens_version=sae_lens_version,
-            sae_cfg_dict=asdict(sae.cfg),
+            sae_cfg_dict=cfg_dict,
         )
 
         results_dict[f"{sae_release}_{sae_id}"] = asdict(eval_output)

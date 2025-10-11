@@ -156,7 +156,8 @@ def run_eval(
                         num_split_features=row["num_split_feats"],  # type: ignore
                     )
                 )
-
+        cfg_dict = {**asdict(sae.cfg)}
+        del cfg_dict["metadata"]
         eval_output = AbsorptionEvalOutput(
             eval_type_id=EVAL_TYPE_ID_ABSORPTION,
             eval_config=config,
@@ -183,7 +184,7 @@ def run_eval(
             sae_lens_id=sae_id,
             sae_lens_release_id=sae_release,
             sae_lens_version=sae_lens_version,
-            sae_cfg_dict=asdict(sae.cfg),
+            sae_cfg_dict=cfg_dict,
         )
 
         results_dict[f"{sae_release}_{sae_id}"] = asdict(eval_output)

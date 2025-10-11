@@ -490,6 +490,8 @@ def run_eval(
             device=device,
         )
 
+        cfg_dict = {**asdict(sae.cfg)}
+        del cfg_dict["metadata"]
         sae_eval_result = {
             "eval_instance_id": eval_instance_id,
             "sae_lens_release": sae_release,
@@ -501,7 +503,7 @@ def run_eval(
             "eval_config": asdict(config),
             "eval_results": eval_output,
             "eval_artifacts": {"artifacts": "None"},
-            "sae_cfg_dict": asdict(sae.cfg),
+            "sae_cfg_dict": cfg_dict,
         }
 
         with open(sae_result_path, "w") as f:

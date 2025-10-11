@@ -904,6 +904,8 @@ def save_single_eval_result(
     feature_metrics_by_feature = convert_feature_metrics(flattened_feature_metrics)
 
     # Create the full output object
+    cfg_dict = {**asdict(sae.cfg)}
+    del cfg_dict["metadata"]
     eval_output = CoreEvalOutput(
         eval_config=eval_config,
         eval_id=eval_instance_id,
@@ -915,7 +917,7 @@ def save_single_eval_result(
         sae_lens_id=result["sae_id"],
         sae_lens_release_id=result["sae_set"],
         sae_lens_version=sae_lens_version,
-        sae_cfg_dict=asdict(sae.cfg),
+        sae_cfg_dict=cfg_dict,
     )
 
     eval_output.to_json_file(json_path)
