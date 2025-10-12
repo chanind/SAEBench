@@ -915,7 +915,7 @@ def save_single_eval_result(
         sae_lens_id=result["sae_id"],
         sae_lens_release_id=result["sae_set"],
         sae_lens_version=sae_lens_version,
-        sae_cfg_dict=general_utils.sae_cfg_to_dict(sae.cfg),
+        sae_cfg_dict=sae.cfg.to_dict(),
     )
 
     eval_output.to_json_file(json_path)

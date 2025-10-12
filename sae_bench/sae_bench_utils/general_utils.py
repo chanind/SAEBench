@@ -3,7 +3,6 @@ import os
 import random
 import re
 import time
-from dataclasses import asdict
 from typing import Any, Callable
 
 import pandas as pd
@@ -342,14 +341,3 @@ def _standardize_sae_cfg(cfg: Any):
     metadata.exclude_special_tokens = exclude_special_tokens
 
     cfg.metadata = metadata
-
-
-def sae_cfg_to_dict(cfg: Any) -> dict:
-    # SAELens configs have a to_dict method
-    if hasattr(cfg, "to_dict") and callable(cfg.to_dict):
-        return cfg.to_dict()  # type: ignore
-    # If this isn't SAELens, we need to manually remove the metadata field
-    cfg_dict = {**asdict(cfg)}
-    if "metadata" in cfg_dict:
-        del cfg_dict["metadata"]
-    return cfg_dict

@@ -501,7 +501,7 @@ def run_eval(
             "eval_config": asdict(config),
             "eval_results": eval_output,
             "eval_artifacts": {"artifacts": "None"},
-            "sae_cfg_dict": general_utils.sae_cfg_to_dict(sae.cfg),
+            "sae_cfg_dict": sae.cfg.to_dict(),
         }
 
         with open(sae_result_path, "w") as f:
