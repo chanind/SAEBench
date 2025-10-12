@@ -824,8 +824,6 @@ def run_eval(
             save_activations,
         )
         if eval_type == EVAL_TYPE_ID_SCR:
-            cfg_dict = {**asdict(sae.cfg)}
-            del cfg_dict["metadata"]
             eval_output = ScrEvalOutput(
                 eval_type_id=eval_type,
                 eval_config=config,
@@ -852,11 +850,9 @@ def run_eval(
                 sae_lens_id=sae_id,
                 sae_lens_release_id=sae_release,
                 sae_lens_version=sae_lens_version,
-                sae_cfg_dict=cfg_dict,
+                sae_cfg_dict=general_utils.sae_cfg_to_dict(sae.cfg),
             )
         elif eval_type == EVAL_TYPE_ID_TPP:
-            cfg_dict = {**asdict(sae.cfg)}
-            del cfg_dict["metadata"]
             eval_output = TppEvalOutput(
                 eval_type_id=eval_type,
                 eval_config=config,
@@ -884,7 +880,7 @@ def run_eval(
                 sae_lens_id=sae_id,
                 sae_lens_release_id=sae_release,
                 sae_lens_version=sae_lens_version,
-                sae_cfg_dict=cfg_dict,
+                sae_cfg_dict=general_utils.sae_cfg_to_dict(sae.cfg),
             )
         else:
             raise ValueError(f"Invalid eval type: {eval_type}")

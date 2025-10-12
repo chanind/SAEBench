@@ -197,3 +197,74 @@ def test_standardize_sae_cfg_with_custom_sae():
     assert metadata.hook_name == cfg.hook_name
     assert hasattr(metadata, "model_name")
     assert metadata.model_name == cfg.model_name
+
+
+def test_sae_cfg_to_dict_with_saelens_sae(gpt2_l4_sae: SAE):
+    cfg = gpt2_l4_sae.cfg
+
+    general_utils._standardize_sae_cfg(cfg)
+
+    cfg_dict = general_utils.sae_cfg_to_dict(cfg)
+
+    assert isinstance(cfg_dict, dict)
+
+    assert "d_in" in cfg_dict
+    assert cfg_dict["d_in"] == 768
+
+    assert "d_sae" in cfg_dict
+    assert cfg_dict["d_sae"] == 24576
+
+    assert cfg_dict["metadata"]["hook_layer"] == cfg.hook_layer
+    assert cfg_dict["metadata"]["hook_name"] == cfg.hook_name
+    assert cfg_dict["metadata"]["model_name"] == cfg.model_name
+
+    assert "architecture" in cfg_dict
+
+    assert "device" in cfg_dict
+
+    assert "dtype" in cfg_dict
+
+
+def test_sae_cfg_to_dict_with_custom_sae():
+    device = torch.device("cpu")
+    dtype = torch.float32
+    model_name = "gpt2"
+    hook_layer = 3
+    d_in = 768
+
+    custom_sae = IdentitySAE(
+        d_in=d_in,
+        model_name=model_name,
+        hook_layer=hook_layer,
+        device=device,
+        dtype=dtype,
+    )
+
+    cfg = custom_sae.cfg
+
+    general_utils._standardize_sae_cfg(cfg)
+
+    cfg_dict = general_utils.sae_cfg_to_dict(cfg)
+
+    assert isinstance(cfg_dict, dict)
+
+    assert "d_in" in cfg_dict
+    assert cfg_dict["d_in"] == d_in
+
+    assert "d_sae" in cfg_dict
+    assert cfg_dict["d_sae"] == d_in
+
+    assert "model_name" in cfg_dict
+    assert cfg_dict["model_name"] == model_name
+
+    assert "hook_name" in cfg_dict
+    assert cfg_dict["hook_name"] == "blocks.3.hook_resid_post"
+
+    assert "hook_layer" in cfg_dict
+    assert cfg_dict["hook_layer"] == hook_layer
+
+    assert "architecture" in cfg_dict
+
+    assert "device" in cfg_dict
+
+    assert "dtype" in cfg_dict

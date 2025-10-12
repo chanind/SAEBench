@@ -182,8 +182,6 @@ def run_eval(
         )
         metrics_df = get_metrics_df(sae_results_folder)
         unlearning_score = get_unlearning_scores(metrics_df)
-        cfg_dict = {**asdict(sae.cfg)}
-        del cfg_dict["metadata"]
         eval_output = UnlearningEvalOutput(
             eval_config=config,
             eval_id=eval_instance_id,
@@ -196,7 +194,7 @@ def run_eval(
             sae_lens_id=sae_id,
             sae_lens_release_id=sae_release,
             sae_lens_version=sae_lens_version,
-            sae_cfg_dict=cfg_dict,
+            sae_cfg_dict=general_utils.sae_cfg_to_dict(sae.cfg),
         )
 
         results_dict[f"{sae_release}_{sae_id}"] = asdict(eval_output)
